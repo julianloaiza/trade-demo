@@ -1,5 +1,7 @@
 package com.trade.demo.domain.model;
 
+import java.util.Map;
+
 /**
  * FIX message object.
  * 17 - execId
@@ -12,18 +14,21 @@ package com.trade.demo.domain.model;
  */
 public class Message {
     
+    private final Map<String, Object> data;
+    
+    public Message(Map<String, Object> data) {
+        this.data = data;
+    }
+    
     public String getString(int tag) {
-        // Implementation would depend on the actual FIX message parsing
-        return null;
+        return data.get(String.valueOf(tag)).toString();
     }
     
     public Double getDouble(int tag) {
-        // Implementation would depend on the actual FIX message parsing
-        return null;
+        return ((Number) data.get(String.valueOf(tag))).doubleValue();
     }
     
     public Integer getInt(int tag) {
-        // Implementation would depend on the actual FIX message parsing
-        return null;
+        return ((Number) data.get(String.valueOf(tag))).intValue();
     }
 }
