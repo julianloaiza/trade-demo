@@ -31,6 +31,8 @@ public class StreamController {
      */
     @GetMapping("/health")
     public ResponseEntity<String> health() {
+        // Clean up inactive connections before reporting count
+        kafkaTemplate.cleanupInactiveConnections();
         return ResponseEntity.ok("Trade Demo Service is running. Active subscribers: " + kafkaTemplate.getSubscriberCount());
     }
     
