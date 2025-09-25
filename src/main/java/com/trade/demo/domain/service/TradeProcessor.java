@@ -31,12 +31,12 @@ public class TradeProcessor {
         System.out.println("Processing trade: " + execId);
         
         // Extract FIX tags
-        String securityId = msg.getString(48);        // Security ID
-        String idSourceStr = msg.getString(22);      // Security ID Source
-        String account = msg.getString(1);           // Account
-        Integer lastShares = msg.getInt(32);          // Last Shares (positive)
-        Double avgPx = msg.getDouble(6);              // Average Price (positive)
-        String side = msg.getString(8);              // Side (BUY/SELL)
+        String securityId = msg.getString(48);        // securityId
+        String idSourceStr = msg.getString(22);      // securityIdSource
+        String account = msg.getString(1);            // account
+        Integer lastShares = msg.getInt(32);          // lastShares (positive)
+        Double avgPx = msg.getDouble(6);              // avgPx (positive)
+        String side = msg.getString(8);              // side (BUY/SELL)
         
         // Map IdSource string to enum
         IdSource idSource = IdSource.valueOf(idSourceStr);
@@ -54,19 +54,19 @@ public class TradeProcessor {
         tradeMessage.setPrice(avgPx);
         
         // Enrich with Security Master data
-        TradeMessage enrichedTrade = enrichWithSecurityMaster(tradeMessage);
+        enrichWithSecurityMaster(tradeMessage);
         
-        // Generate Kafka key and send
-        String kafkaKey = execId + account;
-        kafkaTemplate.sendDefault(kafkaKey, enrichedTrade);
+        // Send to Kafka
+        String kafkaKey = execId;
+        kafkaTemplate.sendDefault(kafkaKey, tradeMessage);
         
         System.out.println("Trade processed: " + execId);
     }
     
-    private TradeMessage enrichWithSecurityMaster(TradeMessage trade) {
-        // Create simple SecurityId request
+    private void enrichWithSecurityMaster(TradeMessage trade) {
+        // Create SecurityId request with minimal data
         SecurityId request = new SecurityId();
-        request.setRic(trade.getSecurityId()); // Simple request with RIC
+        request.setRic(trade.getSecurityId());
         
         // Call Security Master API
         SecurityId enrichedSecurity = restTemplate.exchange(
@@ -82,7 +82,5 @@ public class TradeProcessor {
         trade.setCusip(enrichedSecurity.getCusip());
         trade.setSedol(enrichedSecurity.getSedol());
         trade.setTicker(enrichedSecurity.getTicker());
-        
-        return trade;
     }
 }

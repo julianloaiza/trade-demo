@@ -14,21 +14,21 @@ import java.util.Map;
  */
 public class Message {
     
-    private final Map<String, Object> data;
+    private final Map<Integer, String> data;
     
-    public Message(Map<String, Object> data) {
+    public Message(Map<Integer, String> data) {
         this.data = data;
     }
     
     public String getString(int tag) {
-        return data.get(String.valueOf(tag)).toString();
+        return data.get(tag);
     }
     
     public Double getDouble(int tag) {
-        return ((Number) data.get(String.valueOf(tag))).doubleValue();
+        return Double.parseDouble(data.get(tag));
     }
     
     public Integer getInt(int tag) {
-        return ((Number) data.get(String.valueOf(tag))).intValue();
+        return Integer.parseInt(data.get(tag));
     }
 }

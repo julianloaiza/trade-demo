@@ -3,8 +3,8 @@ package com.trade.demo.web.config;
 import com.trade.demo.domain.infrastructure.KafkaTemplate;
 import com.trade.demo.domain.infrastructure.RestTemplate;
 import com.trade.demo.domain.model.TradeMessage;
-import com.trade.demo.persistence.publisher.InMemoryTradeKafkaTemplate;
-import com.trade.demo.persistence.security.SecurityMasterStubRestTemplate;
+import com.trade.demo.persistence.publisher.KafkaTemplateImpl;
+import com.trade.demo.persistence.security.RestTemplateImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,11 +13,11 @@ public class AppConfig {
     
     @Bean
     public KafkaTemplate<String, TradeMessage> kafkaTemplate() {
-        return new InMemoryTradeKafkaTemplate();
+        return new KafkaTemplateImpl();
     }
     
     @Bean
     public RestTemplate restTemplate() {
-        return new SecurityMasterStubRestTemplate();
+        return new RestTemplateImpl();
     }
 }

@@ -10,7 +10,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
 
 @Component
-public class InMemoryTradeKafkaTemplate implements KafkaTemplate<String, TradeMessage> {
+public class KafkaTemplateImpl implements KafkaTemplate<String, TradeMessage> {
     
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
     

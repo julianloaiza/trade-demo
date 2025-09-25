@@ -2,7 +2,7 @@ package com.trade.demo.web.controller;
 
 import com.trade.demo.domain.model.Message;
 import com.trade.demo.domain.service.TradeProcessor;
-import com.trade.demo.persistence.publisher.InMemoryTradeKafkaTemplate;
+import com.trade.demo.persistence.publisher.KafkaTemplateImpl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,10 +17,10 @@ import java.util.Map;
 @RequestMapping("/api")
 public class StreamController {
     
-    private final InMemoryTradeKafkaTemplate kafkaTemplate;
+    private final KafkaTemplateImpl kafkaTemplate;
     private final TradeProcessor tradeProcessor;
     
-    public StreamController(InMemoryTradeKafkaTemplate kafkaTemplate, TradeProcessor tradeProcessor) {
+    public StreamController(KafkaTemplateImpl kafkaTemplate, TradeProcessor tradeProcessor) {
         this.kafkaTemplate = kafkaTemplate;
         this.tradeProcessor = tradeProcessor;
     }
@@ -44,10 +44,10 @@ public class StreamController {
     
     /**
      * Endpoint to inject FIX messages for testing
-     * Accepts JSON with FIX tags as keys
+     * Accepts JSON with FIX tags as integer keys
      */
     @PostMapping("/fix")
-    public ResponseEntity<String> injectFixMessage(@RequestBody Map<String, Object> fixData) {
+    public ResponseEntity<String> injectFixMessage(@RequestBody Map<Integer, String> fixData) {
         try {
             // Create Message object directly from JSON
             Message message = new Message(fixData);
