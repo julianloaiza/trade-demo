@@ -6,60 +6,42 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Component
 public class KafkaTemplateImpl implements KafkaTemplate<String, TradeMessage> {
-    
+
+    // SSE subscribers
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
-    
-    @Override
-    public void sendDefault(String key, TradeMessage msg) {
-        // Simulate Kafka by broadcasting to SSE subscribers
-        broadcastTrade(msg);
-        System.out.println("Trade published to " + emitters.size() + " subscribers: " + msg.getTradeId());
-    }
-    
-    /**
-     * Add a new SSE emitter to the list of subscribers
-     */
+
+    // Simple API for Controller to add a subscriber
     public SseEmitter addEmitter() {
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+        SseEmitter emitter = new SseEmitter(0L); // no timeout for demo
         emitters.add(emitter);
-        
-        // Remove emitter when connection is closed
-        emitter.onCompletion(() -> emitters.remove(emitter));
-        emitter.onTimeout(() -> emitters.remove(emitter));
-        emitter.onError((ex) -> emitters.remove(emitter));
-        
-        System.out.println("SSE subscriber connected: " + emitters.size());
+
+        // Cleanup when client disconnects
+        Runnable remove = () -> emitters.remove(emitter);
+        emitter.onCompletion(remove);
+        emitter.onTimeout(remove);
+        emitter.onError(e -> remove.run());
+
         return emitter;
     }
-    
-    /**
-     * Broadcast a trade message to all connected clients
-     */
-    public void broadcastTrade(TradeMessage trade) {
-        List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
-        
+
+    // Simulate "publishing to Kafka": here we just emit via SSE
+    @Override
+    public void sendDefault(String key, TradeMessage msg) {
+        // In a POC, "best effort" is enough. If it fails, we remove the client.
         for (SseEmitter emitter : emitters) {
             try {
-                emitter.send(SseEmitter.event()
-                    .name("trade")
-                    .data(trade));
+                emitter.send(SseEmitter.event().name("trade").data(msg));
             } catch (IOException e) {
-                deadEmitters.add(emitter);
+                emitters.remove(emitter);
             }
         }
-        
-        // Remove dead emitters
-        emitters.removeAll(deadEmitters);
     }
-    
-    /**
-     * Get the number of active subscribers
-     */
+
     public int getSubscriberCount() {
         return emitters.size();
     }

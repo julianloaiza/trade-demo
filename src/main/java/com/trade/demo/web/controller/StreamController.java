@@ -24,6 +24,14 @@ public class StreamController {
         this.kafkaTemplate = kafkaTemplate;
         this.tradeProcessor = tradeProcessor;
     }
+   
+    /**
+     * Health check endpoint to verify the service is running
+     */
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("Trade Demo Service is running. Active subscribers: " + kafkaTemplate.getSubscriberCount());
+    }
     
     /**
      * SSE endpoint for real-time trade streaming
@@ -32,14 +40,6 @@ public class StreamController {
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamTrades() {
         return kafkaTemplate.addEmitter();
-    }
-    
-    /**
-     * Health check endpoint to verify the service is running
-     */
-    @GetMapping("/health")
-    public ResponseEntity<String> health() {
-        return ResponseEntity.ok("Trade Demo Service is running. Active subscribers: " + kafkaTemplate.getSubscriberCount());
     }
     
     /**
