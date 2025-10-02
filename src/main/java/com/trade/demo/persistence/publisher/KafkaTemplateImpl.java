@@ -12,68 +12,49 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Component
 public class KafkaTemplateImpl implements KafkaTemplate<String, TradeMessage> {
 
-    // SSE subscribers
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
-    // Simple API for Controller to add a subscriber
+    // Add new SSE connection with auto-cleanup
     public SseEmitter addEmitter() {
-        SseEmitter emitter = new SseEmitter(300000L); // 5 minute timeout
+        SseEmitter emitter = new SseEmitter(300000L);
         emitters.add(emitter);
-
-        // Cleanup when client disconnects
-        Runnable remove = () -> {
-            emitters.remove(emitter);
-            System.out.println("SSE connection removed. Active subscribers: " + emitters.size());
-        };
+        
+        Runnable remove = () -> emitters.remove(emitter);
+        
         emitter.onCompletion(remove);
         emitter.onTimeout(remove);
-        emitter.onError(e -> {
-            System.out.println("SSE connection error: " + e.getMessage());
-            remove.run();
-        });
-
-        System.out.println("New SSE connection added. Active subscribers: " + emitters.size());
+        emitter.onError(e -> remove.run());
+        
         return emitter;
     }
 
-    // Simulate "publishing to Kafka": here we just emit via SSE
+    // Send message to all active connections
     @Override
-    public void sendDefault(String key, TradeMessage msg) {
-        // In a POC, "best effort" is enough. If it fails, we remove the client.
-        List<SseEmitter> toRemove = new CopyOnWriteArrayList<>();
-        
-        for (SseEmitter emitter : emitters) {
+    public void sendDefault(String key, TradeMessage msg) {        
+        emitters.removeIf(emitter -> {
             try {
                 emitter.send(SseEmitter.event().name("trade").data(msg));
+                return false;
             } catch (IOException e) {
-                toRemove.add(emitter);
+                return true;
             }
-        }
-        
-        // Remove failed emitters after iteration
-        emitters.removeAll(toRemove);
+        });
     }
 
-    public int getSubscriberCount() {
-        return emitters.size();
+    // Remove inactive connections by sending ping
+    public void cleanupInactiveConnections() {
+        emitters.removeIf(emitter -> {
+            try {
+                emitter.send(SseEmitter.event().name("ping").data("ping"));
+                return false;
+            } catch (IOException e) {
+                return true;
+            }
+        });
     }
     
-    // Method to manually clean up inactive connections
-    public void cleanupInactiveConnections() {
-        List<SseEmitter> toRemove = new CopyOnWriteArrayList<>();
-        
-        for (SseEmitter emitter : emitters) {
-            try {
-                // Try to send a ping to check if connection is alive
-                emitter.send(SseEmitter.event().name("ping").data("ping"));
-            } catch (IOException e) {
-                toRemove.add(emitter);
-            }
-        }
-        
-        emitters.removeAll(toRemove);
-        if (!toRemove.isEmpty()) {
-            System.out.println("Cleaned up " + toRemove.size() + " inactive connections. Active subscribers: " + emitters.size());
-        }
+    // Get current subscriber count
+    public int getSubscriberCount() {
+        return emitters.size();
     }
 }

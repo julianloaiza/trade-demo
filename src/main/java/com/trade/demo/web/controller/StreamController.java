@@ -26,39 +26,26 @@ public class StreamController {
         this.tradeProcessor = tradeProcessor;
     }
    
-    /**
-     * Health check endpoint to verify the service is running
-     */
+    // Check service health
     @GetMapping("/health")
     public ResponseEntity<String> health() {
-        // Clean up inactive connections before reporting count
         kafkaTemplate.cleanupInactiveConnections();
         return ResponseEntity.ok("Trade Demo Service is running. Active subscribers: " + kafkaTemplate.getSubscriberCount());
     }
     
-    /**
-     * SSE endpoint for real-time trade streaming
-     * Frontend connects to this endpoint to receive trade updates
-     */
+    // Start SSE stream
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamTrades() {
         return kafkaTemplate.addEmitter();
     }
     
-    /**
-     * Endpoint to inject FIX messages for testing
-     * Accepts JSON with FIX tags as integer keys
-     */
+    // Inject FIX message
     @PostMapping("/fix")
     public ResponseEntity<String> injectFixMessage(@RequestBody Map<Integer, String> fixData) {
         try {
-            // Create Message object directly from JSON
             Message message = new Message(fixData);
-            
-            // Process the message through TradeProcessor
             tradeProcessor.onMessage(message);
-            
-            return ResponseEntity.accepted().body("FIX message processed successfully");
+            return ResponseEntity.ok("FIX message processed successfully");
             
         } catch (Exception e) {
             System.out.println("ERROR: " + e.getMessage());
