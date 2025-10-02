@@ -33,7 +33,7 @@ public class KafkaTemplateImpl implements KafkaTemplate<String, TradeMessage> {
     public void sendDefault(String key, TradeMessage msg) {        
         emitters.removeIf(emitter -> {
             try {
-                emitter.send(SseEmitter.event().name("trade").data(msg));
+                emitter.send(SseEmitter.event().name("trade").id(key).data(msg));
                 return false;
             } catch (IOException e) {
                 return true;
